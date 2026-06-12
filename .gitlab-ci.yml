@@ -1,0 +1,14 @@
+build-windows:
+  stage: build
+  tags:
+    - shared-windows
+    - windows
+  before_script:
+    - choco install -y rust mingw
+    - refreshenv
+    - rustup target add x86_64-pc-windows-gnu
+  script:
+    - bash build
+  artifacts:
+    paths:
+      - target/x86_64-pc-windows-gnu/honker_ext.dll

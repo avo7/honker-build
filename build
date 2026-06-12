@@ -1,0 +1,38 @@
+#! /usr/bin/env bash
+
+set -e
+
+BASE_DIR="$(pwd)"
+
+[ ! command -v cargo &> /dev/null ] && echo "Cargo is not installed. Please install Rust and Cargo to proceed." && exit 1
+
+TARGETS=(
+#    "aarch64-apple-darwin:libhonker_ext.dylib"
+#    "x86_64-apple-darwin:libhonker_ext.dylib"
+#    "x86_64-unknown-linux-gnu:libhonker_ext.so"
+    "x86_64-pc-windows-gnu:honker_ext.dll"
+)
+
+for ENTRY in "${TARGETS[@]}"; do
+    TARGET="${ENTRY%%:*}"
+    if ! rustup target list --installed | grep -q "$TARGET"; then
+        echo "Installing Rust target: $TARGET"
+        rustup target add "$TARGET"
+    fi
+done
+
+rm -rf $BASE_DIR/source
+git clone https://github.com/russellromney/honker.git $BASE_DIR/source
+
+for ENTRY in "${TARGETS[@]}"; do
+    TARGET="${ENTRY%%:*}"
+    EXTENSION_LIB="${ENTRY##*:}"
+
+    echo "Building the extension library for target: $TARGET"
+    rm -rf "$BASE_DIR/source/target/$TARGET"
+    cargo build -r -q -p honker-extension --target "$TARGET" --manifest-path "$BASE_DIR/source/honker-extension/Cargo.toml"
+    mkdir -p $BASE_DIR/target/$TARGET
+    mv "$BASE_DIR/source/target/$TARGET/release/$EXTENSION_LIB" "$BASE_DIR/target/$TARGET/$EXTENSION_LIB"
+done
+
+echo "Initialization complete"
