@@ -1,0 +1,105 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '24 * * * *'
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      new_tag: ${{ steps.check.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "new_tag=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          LATEST=$(gh api repos/russellromney/honker/tags --jq '.[0].name')
+          CURRENT=$(cat .upstream-tag 2>/dev/null || echo "")
+          if [ "$LATEST" != "$CURRENT" ]; then
+            echo "$LATEST" > .upstream-tag
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .upstream-tag
+            git commit -m "Track upstream honker tag $LATEST"
+            git push
+            echo "new_tag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "new_tag=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-linux-windows:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.new_tag == 'true'
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TARGETS: "linux-x86_64 windows-x86_64"
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mingw-w64
+      - run: rustup target add x86_64-unknown-linux-gnu x86_64-pc-windows-gnu
+      - run: bash build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libhonker_ext-linux-x86_64.so
+          path: target/x86_64-unknown-linux-gnu/libhonker_ext.so
+      - uses: actions/upload-artifact@v4
+        with:
+          name: honker_ext-windows-x86_64.dll
+          path: target/x86_64-pc-windows-gnu/honker_ext.dll
+
+  build-macos:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.new_tag == 'true'
+    runs-on: macos-latest
+    env:
+      BUILD_TARGETS: "macos-arm64 macos-x86_64"
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - run: bash build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libhonker_ext-macos-arm64.dylib
+          path: target/aarch64-apple-darwin/libhonker_ext.dylib
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libhonker_ext-macos-x86_64.dylib
+          path: target/x86_64-apple-darwin/libhonker_ext.dylib
+
+  release:
+    needs: [build-linux-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Flatten artifacts
+        run: |
+          mkdir release
+          cp artifacts/libhonker_ext-linux-x86_64.so/libhonker_ext.so release/libhonker_ext-linux-x86_64.so
+          cp artifacts/libhonker_ext-windows-x86_64.dll/libhonker_ext.dll release/libhonker_ext-windows-x86_64.dll
+          cp artifacts/libhonker_ext-macos-arm64.dylib/libhonker_ext.dylib release/libhonker_ext-macos-arm64.dylib
+          cp artifacts/libhonker_ext-macos-x86_64.dylib/libhonker_ext.dylib release/libhonker_ext-macos-x86_64.dylib
+      - name: Remove previous latest release
+        run: gh release delete latest --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          make_latest: true
+          files: release/*
