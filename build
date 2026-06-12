@@ -9,7 +9,7 @@ BASE_DIR="$(pwd)"
 TARGETS=(
 #    "aarch64-apple-darwin:libhonker_ext.dylib"
 #    "x86_64-apple-darwin:libhonker_ext.dylib"
-#    "x86_64-unknown-linux-gnu:libhonker_ext.so"
+    "x86_64-unknown-linux-gnu:libhonker_ext.so"
     "x86_64-pc-windows-gnu:honker_ext.dll"
 )
 
