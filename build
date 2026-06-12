@@ -11,7 +11,7 @@ resolve_target() {
         macos-arm64)    echo "aarch64-apple-darwin:libhonker_ext.dylib" ;;
         macos-x86_64)   echo "x86_64-apple-darwin:libhonker_ext.dylib" ;;
         linux-x86_64)   echo "x86_64-unknown-linux-gnu:libhonker_ext.so" ;;
-        windows-x86_64) echo "x86_64-pc-windows-gnu:libhonker_ext.dll" ;;
+        windows-x86_64) echo "x86_64-pc-windows-gnu:honker_ext.dll" ;;
         *) echo "Unknown build target: $1" >&2; exit 1 ;;
     esac
 }
