@@ -94,6 +94,7 @@ jobs:
           cp artifacts/libhonker_ext-windows-x86_64.dll/libhonker_ext.dll release/libhonker_ext-windows-x86_64.dll
           cp artifacts/libhonker_ext-macos-arm64.dylib/libhonker_ext.dylib release/libhonker_ext-macos-arm64.dylib
           cp artifacts/libhonker_ext-macos-x86_64.dylib/libhonker_ext.dylib release/libhonker_ext-macos-x86_64.dylib
+          cd release && zip libhonker_ext.zip *
       - name: Remove previous latest release
         run: gh release delete latest --yes --cleanup-tag || true
         env:
