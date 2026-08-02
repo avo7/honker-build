@@ -45,3 +45,4 @@ for ENTRY in "${TARGETS[@]}"; do
     mkdir -p $BASE_DIR/target/$TARGET
     mv "$BASE_DIR/source/target/$TARGET/release/$EXTENSION_LIB" "$BASE_DIR/target/$TARGET/$EXTENSION_LIB"
 done
+
