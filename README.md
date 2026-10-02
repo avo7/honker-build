@@ -9,4 +9,3 @@ Use the following (static) links to directly download the extension:
 - [MacOS arm64](https://github.com/avo7/honker-build/releases/download/latest/libhonker_ext-macos-arm64.dylib)
 - [MacOS intel](https://github.com/avo7/honker-build/releases/download/latest/libhonker_ext-macos-x86_64.dylib)
 - [Windows](https://github.com/avo7/honker-build/releases/download/latest/libhonker_ext-windows-x86_64.dll)
-
